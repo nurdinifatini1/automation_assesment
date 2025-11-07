@@ -1,0 +1,14 @@
+{
+  "name": "automation-assessment",
+  "version": "1.0.0",
+  "description": "Web & API Automation Assessment (Playwright + Axios)",
+  "main": "index.js",
+  "scripts": {
+    "web-test": "node web-tests/login.spec.js",
+    "api-test": "node api-tests/getUserDetailByEmail.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "playwright": "^1.56.1"
+  }
+}
