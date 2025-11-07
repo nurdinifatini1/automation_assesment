@@ -28,5 +28,5 @@ npm install dotenv  - for environment variables
 
 # How to run 
 
-npm run web-test   # Run web automation
-npm run api-test   # Run API automation
+npm run web-test -  Run web automation
+npm run api-test -  Run API automation
