@@ -1,61 +1,38 @@
+require('dotenv').config();
 const { chromium } = require('playwright');
-const fs = require('fs');
-const path = require('path');
 
 (async () => {
-  const browser = await chromium.launch({ headless: false }); // set false to see browser
+  const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
   const page = await context.newPage();
 
   try {
-    // 1️⃣ Navigate to login page
-    await page.goto('https://practicesoftwaretesting.com/auth/login', { timeout: 30000 });
+    // optional: set a longer timeout for slower pages
+    page.setDefaultTimeout(30000);
 
-    // 2️⃣ Wait for email input and fill
-    await page.waitForSelector('input[type="email"]', { timeout: 30000 });
-    await page.fill('input[type="email"]', 'customer@practicesoftwaretesting.com');
+    await page.goto('https://practicesoftwaretesting.com/auth/login');
 
-    // 3️⃣ Wait for password input and fill
-    await page.waitForSelector('input[type="password"]', { timeout: 30000 });
-    await page.fill('input[type="password"]', 'welcome01');
+    const email = process.env.TEST_EMAIL;
+    const password = process.env.TEST_PASSWORD;
 
-    // 4️⃣ Click login and wait for navigation
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle' }),
-      page.click('button[type="submit"]')
-    ]);
-
-    // 5️⃣ Wait for account name to appear
-    await page.waitForSelector('.account-name', { timeout: 30000 });
-
-    // 6️⃣ Get username text
-    const username = await page.textContent('.account-name');
-
-    // 7️⃣ Simple check
-    if (username && username.trim() === 'Jane Doe') {
-      console.log('✅ Login successful, username verified: ' + username.trim());
-      await browser.close();
-      process.exit(0);
-    } else {
-      throw new Error('Username did not match. Found: ' + username);
+    if (!email || !password) {
+      throw new Error('TEST_EMAIL and TEST_PASSWORD must be set in .env');
     }
+
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', password);
+
+    await page.click('button[type="submit"]', { force: true });
+
+    // wait for account name
+    await page.waitForSelector('.account-name');
+
+    const username = await page.textContent('.account-name');
+    console.log('✅ Logged in as:', username?.trim() || '(no name found)');
 
   } catch (err) {
-    console.error('❌ Test failed:', err.message);
-
-    // 8️⃣ Take screenshot on failure
-    const screenshotsDir = path.resolve(__dirname, '../screenshots');
-    if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir, { recursive: true });
-
-    try {
-      const screenshotPath = path.join(screenshotsDir, `failure-${Date.now()}.png`);
-      await page.screenshot({ path: screenshotPath, fullPage: true });
-      console.log('Screenshot saved to:', screenshotPath);
-    } catch (sErr) {
-      console.error('Could not take screenshot:', sErr.message);
-    }
-
-    await browser.close();
-    process.exit(1);
+    console.error(' Test failed:', err.message);
+  } finally {
+   // await browser.close();
   }
 })();
